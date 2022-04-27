@@ -241,7 +241,8 @@ const userController = {
         .map(user => ({
           ...user.toJSON(),
           followerCount: user.Followers.length,
-          isFollowed: req.user?.Followings.some(f => f.id === user.id) || []
+          isFollowed: req.user?.Followings.some(f => f.id === user.id) || [],
+          isMyself: req.user.id === user.id
         }))
 
       users.sort((a, b) => b.followerCount - a.followerCount)
