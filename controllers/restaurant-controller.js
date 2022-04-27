@@ -51,12 +51,21 @@ const restaurantController = {
       const { id } = req.params
       const restaurant = await Restaurant.findByPk(id, {
         include: [Category,
-          { model: Comment, include: [User] },
           { model: User, as: 'FavoritedUsers' },
           { model: User, as: 'LikedUsers' }
         ]
       })
       if (!restaurant) throw new Error('該餐廳不存在！')
+
+      const comments = await Comment.findAll({
+        where: { restaurantId: id },
+        order: [
+          ['created_at', 'DESC']
+        ],
+        include: [User],
+        raw: true,
+        nest: true
+      })
 
       await restaurant.increment('viewCounts')
 
@@ -66,7 +75,8 @@ const restaurantController = {
       return res.render('restaurant', {
         restaurant: restaurant.toJSON(),
         isFavorited,
-        isLiked
+        isLiked,
+        comments
       })
     } catch (err) {
       next(err)

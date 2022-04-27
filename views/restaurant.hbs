@@ -40,7 +40,7 @@
 </div>
 
 <h3 class="mb-3">所有評論：</h3>
-{{#each restaurant.Comments}}
+{{#each comments}}
 {{#if ../user.isAdmin}}
 <form action="/comments/{{this.id}}?_method=DELETE" method="POST" class="float-end">
   <button type="submit" class="btn btn-danger" onclick="return confirm`你確定要刪除該則評論：「{{this.text}}」嗎？`">Delete</button>
