@@ -1,4 +1,5 @@
-const { Restaurant, Category, Comment, User, Favorite } = require('../models')
+const { Op } = require('sequelize')
+const { Restaurant, Category, Comment, User, Favorite, sequelize } = require('../models')
 const { getOffset, getPagination } = require('../helpers/pagination-helper')
 
 const restaurantController = {
@@ -138,18 +139,56 @@ const restaurantController = {
   getTopRestaurants: async (req, res, next) => {
     try {
       const LIMIT = 10
-      const rawRestaurants = await Restaurant.findAll({
-        include: [{ model: User, as: 'FavoritedUsers' }]
+      const rawFavoritedRestaurant = await Favorite.findAll({
+        attributes: [
+          'restaurant_id',
+          [
+            sequelize.fn('COUNT', sequelize.col('user_id')), 'favorited_user_counts'
+          ]
+        ],
+        group: ['restaurant_id'],
+        order: [
+          [sequelize.literal('favorited_user_counts'), 'DESC']
+        ],
+        limit: LIMIT,
+        raw: true,
+        nest: true
       })
+
+      const FavoritedRestaurantId = rawFavoritedRestaurant.map(res => res.restaurant_id)
+      const rawRestaurants = []
+
+      for (let i = 0; i < FavoritedRestaurantId.length; i++) {
+        const restaurant = await Restaurant.findOne({
+          where: { id: FavoritedRestaurantId[i] },
+          include: [{ model: User, as: 'FavoritedUsers' }]
+        })
+        rawRestaurants.push(restaurant.toJSON())
+      }
+
+      // 撈出的資料不為十筆
+      if (rawFavoritedRestaurant.length !== LIMIT) {
+        const number = LIMIT - rawFavoritedRestaurant.length
+        const restaurant = await Restaurant.findAll({
+          where: {
+            id: {
+              [Op.notIn]: FavoritedRestaurantId
+            }
+          },
+          include: [{ model: User, as: 'FavoritedUsers' }],
+          limit: number,
+          raw: true,
+          nest: true
+        })
+        rawRestaurants.push(...restaurant)
+      }
+
       const restaurants = rawRestaurants
         .map(res => ({
-          ...res.toJSON(),
-          favoritedCount: res.FavoritedUsers.length,
+          ...res,
+          favoritedCount: res.FavoritedUsers?.length || 0,
           isFavorited: req.user?.FavoritedRestaurants.some(fr => fr.id === res.id) || []
         }))
-
-      restaurants.sort((a, b) => b.favoritedCount - a.favoritedCount)
-      restaurants.splice(LIMIT)
 
       return res.render('top-restaurants', { restaurants })
     } catch (err) {
