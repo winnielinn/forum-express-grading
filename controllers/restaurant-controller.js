@@ -1,4 +1,4 @@
-const { Restaurant, Category, Comment, User } = require('../models')
+const { Restaurant, Category, Comment, User, Favorite } = require('../models')
 const { getOffset, getPagination } = require('../helpers/pagination-helper')
 
 const restaurantController = {
@@ -75,22 +75,28 @@ const restaurantController = {
   getDashboard: async (req, res, next) => {
     try {
       const restaurantId = req.params.id
-      const [restaurant, comment] = await Promise.all([
-        Restaurant.findByPk(restaurantId, {
-          raw: true,
-          nest: true,
-          include: [Category]
-        }),
+      const restaurant = await Restaurant.findByPk(restaurantId, {
+        raw: true,
+        nest: true,
+        include: [Category]
+      })
+
+      if (!restaurant) throw new Error('該餐廳不存在！')
+
+      const [comment, favorite] = await Promise.all([
         Comment.findAndCountAll({
+          where: { restaurantId },
+          raw: true,
+          nest: true
+        }),
+        Favorite.findAndCountAll({
           where: { restaurantId },
           raw: true,
           nest: true
         })
       ])
 
-      if (!restaurant) throw new Error('該餐廳不存在！')
-
-      res.render('dashboard', { restaurant, comments: comment.count })
+      res.render('dashboard', { restaurant, comments: comment.count, favorites: favorite.count })
     } catch (err) {
       next(err)
     }
