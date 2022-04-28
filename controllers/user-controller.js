@@ -63,32 +63,44 @@ const userController = {
     try {
       const user = getUser(req)
       const userId = Number(req.params.id)
-      const [rawUser, comments] = await Promise.all([
-        User.findByPk(userId),
-        Comment.findAll({
-          where: { userId },
-          // 指定回傳的資料欄位
-          attributes: [
-            'restaurant_id',
-            [
-              sequelize.fn('COUNT', sequelize.col('restaurant_id')),
-              'restaurant_comments'
-            ]
-          ],
-          include: [Restaurant],
-          group: ['restaurant_id'],
-          raw: true,
-          nest: true
-        })
-      ])
+
+      const rawUser = await User.findByPk(userId, {
+        include:
+          [
+            { model: User, as: 'Followers' },
+            { model: User, as: 'Followings' },
+            { model: Restaurant, as: 'FavoritedRestaurants' }
+          ]
+      })
 
       if (!rawUser) throw new Error('該使用者不存在！')
+
+      const comments = await Comment.findAll({
+        where: { userId },
+        // 指定回傳的資料欄位
+        attributes: [
+          'restaurant_id',
+          [
+            sequelize.fn('COUNT', sequelize.col('restaurant_id')),
+            'restaurant_comments'
+          ]
+        ],
+        include: [Restaurant],
+        group: ['restaurant_id'],
+        raw: true,
+        nest: true
+      })
 
       const totalComments = comments.reduce((accumulator, curValue) => {
         return accumulator + curValue.restaurant_comments
       }, 0)
 
-      const profileUser = { ...rawUser.toJSON() }
+      const profileUser = {
+        ...rawUser.toJSON(),
+        followerCounts: rawUser.Followers.length || 0,
+        followingCounts: rawUser.Followings.length || 0,
+        favoritedRestaurans: rawUser.FavoritedRestaurants.length || 0
+      }
 
       return res.render('users/profile', { user, profileUser, comments, totalComments })
     } catch (err) {
