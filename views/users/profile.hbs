@@ -15,7 +15,7 @@
         <p class="card-text">總共留下 <strong>{{ totalComments }}</strong> 則評論在 <strong>{{ comments.length }}</strong> 間餐廳
         </p>
         <p class="card-text">總共收藏 <strong>{{profileUser.favoritedRestaurans}}</strong> 間餐廳</p>
-        <p class="card-text">總共 <strong>{{followingCounts}}</strong> 位 followings (追蹤者)</p>
+        <p class="card-text">總共 <strong>{{profileUser.followingCounts}}</strong> 位 followings (追蹤者)</p>
         <p class="card-text">總共 <strong>{{profileUser.followerCounts}}</strong> 位 follwers (追隨者)</p>
         {{#ifCond user.id profileUser.id}}
         <a class="btn btn-primary" href="/users/{{ user.id }}/edit" role="button">Edit</a>
@@ -30,7 +30,7 @@
     <div class="col-4">
       <div class="card mb-3">
         <div class="card-header">
-          <strong>{{profileUser.followerCounts}}</strong> 位 followings (追蹤者)
+          <strong>{{profileUser.followingCounts}}</strong> 位 followings (追蹤者)
         </div>
         <div class="card-body">
           {{#each profileUser.Followings}}

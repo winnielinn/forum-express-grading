@@ -51,21 +51,13 @@ const restaurantController = {
       const { id } = req.params
       const restaurant = await Restaurant.findByPk(id, {
         include: [Category,
+          { model: Comment, include: [User] },
           { model: User, as: 'FavoritedUsers' },
           { model: User, as: 'LikedUsers' }
-        ]
+        ],
+        order: [[Comment, 'createdAt', 'DESC']]
       })
       if (!restaurant) throw new Error('該餐廳不存在！')
-
-      const comments = await Comment.findAll({
-        where: { restaurantId: id },
-        order: [
-          ['created_at', 'DESC']
-        ],
-        include: [User],
-        raw: true,
-        nest: true
-      })
 
       await restaurant.increment('viewCounts')
 
@@ -75,8 +67,7 @@ const restaurantController = {
       return res.render('restaurant', {
         restaurant: restaurant.toJSON(),
         isFavorited,
-        isLiked,
-        comments
+        isLiked
       })
     } catch (err) {
       next(err)
@@ -113,7 +104,7 @@ const restaurantController = {
   },
   getFeeds: async (req, res, next) => {
     try {
-      const [restaurants, comments] = await Promise.all([
+      const [rawRestaurants, comments] = await Promise.all([
         Restaurant.findAll({
           limit: 10,
           raw: true,
@@ -129,6 +120,11 @@ const restaurantController = {
           order: [['createdAt', 'DESC']]
         })
       ])
+
+      const restaurants = rawRestaurants.map(res => ({
+        ...res,
+        description: res.description.substring(0, 20)
+      }))
 
       return res.render('feeds', { restaurants, comments })
     } catch (err) {

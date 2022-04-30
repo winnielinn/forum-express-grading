@@ -4,23 +4,28 @@
 <hr />
 <div class="row mt-5">
   <div class="col-md-6">
-    <div class="card">
+    <div class="card mb-3" style="max-width: 540px;">
       <div class="card-header">
         最新餐廳
       </div>
-      <div class="card-body">
-        {{#each restaurants}}
-        <div>
-          <h4>
-            <a class="link-primary" href="/restaurants/{{this.id}}">{{this.name}}</a>
-            <small class="fs-6">[{{this.Category.name}}]</small>
-          </h4>
-          <p class="my-4" style="white-space: break-spaces;">{{this.description}}</p>
-          {{relativeTimeFromNow this.createdAt}}
-          <hr>
+      {{#each restaurants}}
+      <div class="row g-0">
+        <div class="col-md-4">
+          <img src="{{this.image}}" class="img-fluid rounded-start" alt="restaurants">
         </div>
-        {{/each}}
+        <div class="col-md-8">
+          <div class="card-body">
+            <h4>
+              <a class="link-primary" href="/restaurants/{{this.id}}">{{this.name}}</a>
+              <a href="http://localhost:3000/restaurants?categoryId={{this.Category.id}}"><sapn class="badge bg-info">[{{this.Category.name}}]</sapn></a>
+            </h4>
+            <p class="my-4" style="white-space: break-spaces;">{{this.description}}</p>
+            {{relativeTimeFromNow this.createdAt}}
+          </div>
+        </div>
       </div>
+      <hr>
+      {{/each}}
     </div>
   </div>
   <div class="col-md-6">
