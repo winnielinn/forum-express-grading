@@ -1,6 +1,5 @@
 const bcrypt = require('bcryptjs')
-const db = require('../models/index')
-const { User, Comment, Restaurant } = require('../models')
+const { User, Comment, Restaurant, sequelize } = require('../models')
 
 const { getUser } = require('../helpers/auth-helpers')
 const { imgurFileHandler } = require('../helpers/file-helpers')
@@ -63,33 +62,34 @@ const userController = {
   getUser: async (req, res, next) => {
     try {
       const userId = req.params.id
-      const [rawUser, comments] = await Promise.all([
-        User.findByPk(userId),
+      const rawUser = await User.findByPk(userId)
+
+      if (!rawUser) throw new Error('該使用者不存在！')
+
+      const [rawComment, comments] = await Promise.all([
+        User.findByPk(userId, {
+          attributes: [
+            [
+              sequelize.fn('count', sequelize.col('Comments.id')), 'counts'
+            ]
+          ],
+          include: [{ model: Comment, attributes: [] }],
+          group: ['id']
+        }),
         Comment.findAll({
           where: { userId },
           attributes: [
-            'restaurant_id',
-            [
-              db.sequelize.fn('count', db.sequelize.col('restaurant_id')),
-              'comments'
-            ]
+            'restaurant_id'
           ],
-          include: [Restaurant],
+          include: [{ model: Restaurant }],
           group: ['restaurant_id'],
           raw: true,
           nest: true
         })
       ])
+      const totalComment = rawComment.dataValues
 
-      if (!rawUser) throw new Error('該使用者不存在！')
-
-      const totalComments = comments.reduce((accumulator, curValue) => {
-        return accumulator + curValue.comments
-      }, 0)
-
-      const user = { ...rawUser.toJSON() }
-
-      return res.render('users/profile', { user, comments, totalComments })
+      return res.render('users/profile', { user: rawUser.get({ plain: true }), comments, totalComment: totalComment.counts })
     } catch (err) {
       next(err)
     }
