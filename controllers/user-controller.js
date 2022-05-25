@@ -215,7 +215,7 @@ const userController = {
       const { restaurantId } = req.params
       const userId = getUser(req).id
 
-      const like = await Like.findOne({
+      const like = await Like.destroy({
         where: {
           restaurantId,
           userId
@@ -224,7 +224,6 @@ const userController = {
 
       if (!like) throw new Error('你尚未喜愛過此餐廳！')
 
-      await like.destroy()
       return res.redirect('back')
     } catch (err) {
       next(err)
