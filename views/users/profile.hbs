@@ -9,7 +9,7 @@
       <div class="card-body">
         <h5 class="card-title">{{ user.name }}</h5>
         <p class="card-text">{{ user.email }}</p>
-        <p class="card-text">總共留下 <strong>{{ totalComment }}</strong> 則評論
+        <p class="card-text">總共留下 <strong>{{ user.totalComments }}</strong> 則評論
         </p>
         <a class="btn btn-primary" href="/users/{{ user.id }}/edit" role="button">Edit</a>
       </div>
@@ -20,7 +20,7 @@
 <div class="card" style="max-width: 800px;">
   <div class="card-header">
     <span>評論過 <strong>{{ comments.length }}</strong> 個餐廳</span>
-    <span>共 <strong>{{ totalComment }}</strong> 則評論</span>
+    <span>共 <strong>{{ user.totalComments }}</strong> 則評論</span>
   </div>
   <div class="card-header">
     <div class="card-body">

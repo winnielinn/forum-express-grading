@@ -62,15 +62,13 @@ const userController = {
   getUser: async (req, res, next) => {
     try {
       const userId = req.params.id
-      const rawUser = await User.findByPk(userId)
 
-      if (!rawUser) throw new Error('該使用者不存在！')
-
-      const [rawComment, comments] = await Promise.all([
+      const [rawUser, comments] = await Promise.all([
         User.findByPk(userId, {
           attributes: [
+            'name', 'email', 'image',
             [
-              sequelize.fn('count', sequelize.col('Comments.id')), 'counts'
+              sequelize.fn('count', sequelize.col('Comments.id')), 'totalComments'
             ]
           ],
           include: [{ model: Comment, attributes: [] }],
@@ -87,9 +85,10 @@ const userController = {
           nest: true
         })
       ])
-      const totalComment = rawComment.dataValues
 
-      return res.render('users/profile', { user: rawUser.get({ plain: true }), comments, totalComment: totalComment.counts })
+      if (!rawUser) throw new Error('該使用者不存在！')
+
+      return res.render('users/profile', { user: rawUser.get({ plain: true }), comments })
     } catch (err) {
       next(err)
     }
